@@ -29,14 +29,18 @@ class ResBlock(nn.Module):
 
         if(down_sample_stride==2):
             self.conv2 = nn.Conv2d(num_in, num_out, kernel_size=3, stride=2, padding=1)
+            self.identity_map = nn.Conv2d(num_in, num_out, kernel_size=1, stride=2)
         else:
             self.conv2 = Conv2dSame(num_in, num_out, kernel_size=3)
+            self.identity_map = nn.Conv2d(num_in, num_out, kernel_size=1, stride=1)
+
         self.conv2_bn = nn.BatchNorm2d(num_out)
 
     def forward(self, x):
 
         x = F.relu(self.conv1_bn(self.conv1(x)))
-        x = F.relu(self.conv2_bn(self.conv2(x) + x)) # identity shortcut ###############
+        identity = self.identity_map(x)
+        x = F.relu(self.conv2_bn(self.conv2(x) + identity)) # identity shortcut ###############
 
         return x
 
