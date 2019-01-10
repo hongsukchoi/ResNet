@@ -42,8 +42,8 @@ def train(model, num_epoch=64000):
     for e in range(num_epoch):
 
         ########## Learning Rate Schedule
-        if num_epoch == 32000: set_lr(optimizer, 0.01)
-        elif num_epoch == 48000: set_lr(optimizer, 0.001)
+        if e == 32000: set_lr(optimizer, 0.01)
+        elif e == 48000: set_lr(optimizer, 0.001)
 
         running_loss = 0.0
         for images, labels in trainloader:
