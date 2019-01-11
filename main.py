@@ -18,13 +18,13 @@ transform = transforms.Compose([
 trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                         download=True, transform=transform)
 
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=128,
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=256,
                                           shuffle=True, num_workers=2)
 
 testset = torchvision.datasets.CIFAR10(root='./data', train=False,
                                        download=True, transform=transform)
 
-testloader = torch.utils.data.DataLoader(testset, batch_size=128, shuffle=False, num_workers=2)
+testloader = torch.utils.data.DataLoader(testset, batch_size=256, shuffle=False, num_workers=2)
 
 class_names = ('plane', 'car', 'bird', 'cat',
                'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
@@ -40,24 +40,23 @@ optimizer = optim.SGD(model.parameters(), lr=0.1, weight_decay=0.0001, momentum=
 
 training_loss, validation_loss, validation_acc = [], [], []
 
-def train(model, num_epoch=64000):
+def train(model, num_epoch=400):
 
+    ite = 0
     for e in range(num_epoch):
-
         ########## Learning Rate Schedule
-        if e == 32000: set_lr(optimizer, 0.01)
-        elif e == 48000: set_lr(optimizer, 0.001)
+        if ite > 32000 and ite < 48000: set_lr(optimizer, 0.01)
+        elif ite > 48000: set_lr(optimizer, 0.001)
 
         running_loss = 0.0
         for images, labels in trainloader:
+            ite = ite + 1
             images = images.to(device)
             labels = labels.to(device)
             optimizer.zero_grad()
 
             loss = criterion(model(images), labels)
-            print('loss calculated')
             loss.backward()
-            print('loss backproped')
             optimizer.step()
 
             running_loss += loss.item()
@@ -75,7 +74,8 @@ def train(model, num_epoch=64000):
 
                     out = model(images)
                     _, predicted = torch.max(out.data, 1)
-                    val_acc += (predicted == labels).sum().item()
+                    equals = predicted == labels
+                    val_acc += torch.mean(equals.type(torch.FloatTensor)).item()
 
                     loss = criterion(out, labels)
                     running_loss += loss.item()
@@ -83,9 +83,7 @@ def train(model, num_epoch=64000):
             validation_acc.append(val_acc / len(testloader))
             validation_loss.append(running_loss / len(testloader))
 
-            print(f'Epoch {e} / {num_epoch}: Training_loss: {training_loss[-1]:.3f}, '
-                  f'                         Validation_loss: {validation_loss[-1]:.3f}, '
-                  f'                         Validation_accuracy: {validation_acc[-1]:.3f} ')
+            print(f'Epoch {e} / {num_epoch}: Training_loss: {training_loss[-1]:.3f}, Validation_loss: {validation_loss[-1]:.3f}, Validation_accuracy: {validation_acc[-1]:.3f} ')
 
             if validation_acc[-1] > np.max(validation_acc):
                 model.save({
@@ -93,12 +91,18 @@ def train(model, num_epoch=64000):
                     'state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
                     'val_acc': validation_acc[-1]
-                }, './checkpoint.pth')
+                }, 'checkpoint.pth')
 
 
             model.train()
 
     print('Training Completed\n')
+    model.save({
+        'epoch': e,
+        'state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'val_acc': validation_acc[-1]
+    }, 'final_checkpoint.pth')
     return model
 
 
@@ -107,7 +111,7 @@ def set_lr(optimizer, lr):
         g['lr'] = lr
 
 
-model = train(model, num_epoch=64000)
+model = train(model, num_epoch=400)
 
 
 
