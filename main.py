@@ -85,8 +85,8 @@ def train(model, num_epoch=400):
 
             print(f'Epoch {e} / {num_epoch}: Training_loss: {training_loss[-1]:.3f}, Validation_loss: {validation_loss[-1]:.3f}, Validation_accuracy: {validation_acc[-1]:.3f} ')
 
-            if validation_acc[-1] > np.max(validation_acc):
-                model.save({
+            if validation_acc[-1] >= np.max(validation_acc):
+                torch.save({
                     'epoch': e,
                     'state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
@@ -97,7 +97,7 @@ def train(model, num_epoch=400):
             model.train()
 
     print('Training Completed\n')
-    model.save({
+    torch.save({
         'epoch': e,
         'state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
