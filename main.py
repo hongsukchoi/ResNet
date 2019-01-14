@@ -32,7 +32,7 @@ class_names = ('plane', 'car', 'bird', 'cat',
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-model = ResNet(3)
+model = ResNet(18) # 56 layers
 model = model.to(device)
 
 criterion = nn.CrossEntropyLoss()

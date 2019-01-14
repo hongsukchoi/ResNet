@@ -27,22 +27,32 @@ class ResBlock(nn.Module):
         self.conv1 = Conv2dSame(num_in, num_in, kernel_size=3)
         self.conv1_bn = nn.BatchNorm2d(num_in)
 
-        if(down_sample_stride==2):
-            self.conv2 = nn.Conv2d(num_in, num_out, kernel_size=3, stride=2, padding=1)
-            self.identity_map = nn.Conv2d(num_in, num_out, kernel_size=1, stride=2)
-        else:
-            self.conv2 = Conv2dSame(num_in, num_out, kernel_size=3)
-            self.identity_map = nn.Conv2d(num_in, num_out, kernel_size=1, stride=1)
-
+        self.conv2 = Conv2dSame(num_in, num_out, kernel_size=3)
         self.conv2_bn = nn.BatchNorm2d(num_out)
+
+        self.identity_map = nn.Sequential()
+
+        if down_sample_stride == 2:
+            self.conv2 = nn.Conv2d(num_in, num_out, kernel_size=3, stride=2, padding=1)
+            self.identity_map = nn.Sequential(
+                                    nn.Conv2d(num_in, num_out, kernel_size=1, stride=2),
+                                    nn.BatchNorm2d(num_out))
 
     def forward(self, x):
 
-        x = F.relu(self.conv1_bn(self.conv1(x)))
         identity = self.identity_map(x)
-        x = F.relu(self.conv2_bn(self.conv2(x) + identity)) # identity shortcut ###############
+
+        x = self.conv1(x)
+        x = self.conv1_bn(x)
+        x = F.relu(x)
+
+        x = self.conv2(x)
+        x = self.conv2_bn(x)
+        x += identity
+        x = F.relu(x)
 
         return x
+
 
 class ResNet(nn.Module):
 
@@ -57,7 +67,6 @@ class ResNet(nn.Module):
         self.sub_module64 = self.subModule(num_block, 64, 64)
 
         self.fc1 = nn.Linear(64, num_class) # num of filters: 64
-
 
     def subModule(self, num_block, num_in, num_out):
 
